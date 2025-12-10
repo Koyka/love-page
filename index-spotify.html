@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>I Love You</title>
+  <meta name="description" content="A tiny, sweet one‑page website." />
+  <style>
+    :root{
+      --bg1:#0b1020;
+      --bg2:#121a33;
+      --card:#0f1730cc;
+      --text:#e9ecff;
+      --muted:#aab2e8;
+      --accent:#ff4d8d;
+      --accent2:#7c5cff;
+      --ring: 0 0 0 1px rgba(255,255,255,.08), 0 20px 60px rgba(0,0,0,.55);
+      --radius: 24px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:
+        radial-gradient(900px 500px at 15% 20%, rgba(124,92,255,.25), transparent 60%),
+        radial-gradient(700px 450px at 85% 30%, rgba(255,77,141,.22), transparent 55%),
+        radial-gradient(800px 500px at 55% 95%, rgba(0,255,204,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      overflow:hidden;
+    }
+
+    /* soft floating blobs */
+    .blob{
+      position:absolute;
+      filter: blur(30px);
+      opacity:.5;
+      border-radius: 999px;
+      mix-blend-mode: screen;
+      animation: drift 12s ease-in-out infinite;
+      pointer-events:none;
+    }
+    .b1{width:260px;height:260px;left:-60px;top:40px;background:rgba(255,77,141,.35)}
+    .b2{width:320px;height:320px;right:-90px;top:120px;background:rgba(124,92,255,.35);animation-delay:-4s}
+    .b3{width:220px;height:220px;left:40%;bottom:-90px;background:rgba(0,255,204,.18);animation-delay:-7s}
+
+    @keyframes drift{
+      0%,100%{transform: translate(0,0) scale(1)}
+      50%{transform: translate(18px,-10px) scale(1.06)}
+    }
+
+    .wrap{
+      position:relative;
+      height:100%;
+      display:grid;
+      place-items:center;
+      padding:24px;
+    }
+
+    .card{
+      width:min(760px, 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow: var(--ring);
+      border-radius: var(--radius);
+      padding: clamp(18px, 4vw, 34px);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .shine{
+      position:absolute;
+      inset:-2px;
+      background: radial-gradient(600px 240px at 20% 0%, rgba(255,255,255,.14), transparent 55%),
+                  radial-gradient(500px 240px at 80% 0%, rgba(255,255,255,.10), transparent 55%);
+      pointer-events:none;
+      opacity:.7;
+    }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:22px;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      color:var(--muted);
+      font-size: 13px;
+      letter-spacing:.2px;
+    }
+
+    .dot{
+      width:8px;height:8px;border-radius:50%;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 20px rgba(255,77,141,.45);
+    }
+
+    h1{
+      margin: 0 0 10px;
+      font-size: clamp(34px, 5vw, 64px);
+      line-height:1.05;
+      letter-spacing:-.02em;
+    }
+
+    .gradient-text{
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+
+    p{
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(15px, 1.8vw, 18px);
+      line-height:1.6;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: clamp(14px, 3vw, 22px);
+      align-items:center;
+      margin-top: 18px;
+    }
+
+    @media (max-width: 720px){
+      .grid{grid-template-columns: 1fr}
+    }
+
+    .heartWrap{
+      display:grid;
+      place-items:center;
+      padding: 10px 8px;
+    }
+
+        .heart{
+      width: 120px;
+      height: 120px;
+      transform: rotate(45deg);
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      position: relative;
+      border-radius: 0; /* keep the point sharp */
+      box-shadow: 0 20px 60px rgba(255,77,141,.25);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .heart::before,
+    .heart::after{
+      content:"";
+      position:absolute;
+      width:120px;height:120px;
+      background: inherit;
+      border-radius: 50%;
+    }
+    .heart::before{left:-60px; top:0}
+    .heart::after{left:0; top:-60px}
+
+    @keyframes pulse{
+      0%,100%{transform: rotate(45deg) scale(1)}
+      50%{transform: rotate(45deg) scale(1.08)}
+    }
+
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:18px;
+    }
+
+    button{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 14px;
+      cursor:pointer;
+      transition: transform .08s ease, background .2s ease, border-color .2s ease;
+      user-select:none;
+    }
+    button:hover{background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.22)}
+    button:active{transform: translateY(1px)}
+    .primary{
+      background: linear-gradient(90deg, rgba(255,77,141,.95), rgba(124,92,255,.95));
+      border-color: rgba(255,255,255,.22);
+      box-shadow: 0 14px 40px rgba(124,92,255,.20);
+    }
+    .primary:hover{filter: brightness(1.05)}
+    .footer{
+      margin-top: 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      color: rgba(233,236,255,.72);
+      font-size: 12px;
+    }
+    a{color: rgba(233,236,255,.72); text-decoration:none}
+    a:hover{text-decoration:underline}
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(15,23,48,.75);
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: var(--ring);
+      color: var(--text);
+      font-size: 14px;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    .toast.show{
+      opacity:1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+  </style>
+</head>
+<body>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+
+  <main class="wrap">
+    <section class="card" aria-label="Love card">
+      <div class="shine"></div>
+
+      <div class="top">
+        
+      </div>
+
+      <div class="grid">
+        <div>
+          <h1><span class="gradient-text">I love you</span> 💖</h1>
+          <p>
+            being far from you is the hardest part. Sometimes it makes it harder to talk the way we want to, and I know misunderstandings happen—but I don’t want you to ever doubt me. I’m staying, I’m trying, and I’m with you through every rough moment.
+            
+          </p>
+
+          <div class="actions">
+            <button id="sparkBtn">Make it sparkle ✨</button>
+          </div>
+        </div>
+
+        <div class="heartWrap" aria-hidden="true">
+          <div class="heart"></div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <span>Made with Love NA.</span>
+        <span><a href="#" id="resetLink">Reset effects</a></span>
+      </div>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <script>
+    const toast = document.getElementById('toast');
+    const sparkBtn = document.getElementById('sparkBtn');
+    const partyBtn = document.getElementById('partyBtn');
+    const resetLink = document.getElementById('resetLink');
+
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=>toast.classList.remove('show'), 1800);
+    }
+    let sparklesOn = false;
+    let sparkleTimer = null;
+
+    function makeSparkle(){
+      const s = document.createElement('div');
+      const size = 6 + Math.random()*10;
+      s.style.position = 'fixed';
+      s.style.left = (Math.random()*100) + 'vw';
+      s.style.top = (Math.random()*100) + 'vh';
+      s.style.width = size + 'px';
+      s.style.height = size + 'px';
+      s.style.borderRadius = '999px';
+      s.style.background = 'rgba(255,255,255,.9)';
+      s.style.boxShadow = '0 0 18px rgba(255,255,255,.8)';
+      s.style.opacity = '0';
+      s.style.transform = 'translateY(6px)';
+      s.style.transition = 'opacity .25s ease, transform .6s ease';
+      s.style.pointerEvents = 'none';
+      document.body.appendChild(s);
+
+      requestAnimationFrame(()=>{
+        s.style.opacity = '1';
+        s.style.transform = 'translateY(-10px)';
+      });
+
+      setTimeout(()=>{
+        s.style.opacity = '0';
+        s.style.transform = 'translateY(-22px)';
+      }, 450);
+
+      setTimeout(()=>s.remove(), 900);
+    }
+
+    function toggleSparkles(){
+      sparklesOn = !sparklesOn;
+      if(sparklesOn){
+        showToast('Sparkles on ✨');
+        sparkBtn.textContent = 'Stop sparkle';
+        sparkleTimer = setInterval(makeSparkle, 160);
+      } else {
+        showToast('Sparkles off');
+        sparkBtn.textContent = 'Make it sparkle ✨';
+        clearInterval(sparkleTimer);
+      }
+    }
+
+    function reset(){
+      sparklesOn = false;
+      sparkBtn.textContent = 'Make it sparkle ✨';
+      clearInterval(sparkleTimer);
+      showToast('Reset ✔');
+    }
+
+    
+    function openSpotify(){
+      window.open("https://open.spotify.com/track/5ZrDlcxIDZyjOzHdYW1ydr?si=ba82ec15e10048c3", "_blank", "noopener");
+      showToast("Opening Spotify 🎧");
+    }
+
+    sparkBtn.addEventListener('click', toggleSparkles);
+    partyBtn.addEventListener('click', openSpotify);
+    resetLink.addEventListener('click', (e)=>{ e.preventDefault(); reset(); });
+  </script>
+</body>
+</html>
