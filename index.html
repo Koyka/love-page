@@ -207,26 +207,56 @@
       padding: 10px 8px;
     }
 
-    .heart{
-      width: 120px;
-      height: 120px;
-      transform: rotate(45deg);
-      background: linear-gradient(180deg, var(--accent), #8a63ff);
-      position: relative;
-      border-radius: 0;
-      box-shadow: 0 20px 60px rgba(255,62,165,.22);
-      animation: pulse 1.4s ease-in-out infinite;
-    }
-    .heart::before,
-    .heart::after{
-      content:"";
-      position:absolute;
-      width:120px;height:120px;
-      background: inherit;
-      border-radius: 50%;
-    }
-    .heart::before{left:-60px; top:0}
-    .heart::after{left:0; top:-60px}
+    .heartWrap{
+  display:grid;
+  place-items:center;
+  padding: 8px 8px 0;
+}
+
+/* قلب responsive */
+.heart{
+  --s: clamp(80px, 28vw, 130px); /* من 80 لـ 130 حسب عرض الشاشة */
+  width: var(--s);
+  height: var(--s);
+  transform: rotate(45deg);
+  background: linear-gradient(180deg, var(--accent), #8a63ff);
+  position: relative;
+  border-radius: 0;
+  box-shadow: 0 20px 60px rgba(255,62,165,.22);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.heart::before,
+.heart::after{
+  content:"";
+  position:absolute;
+  width: var(--s);
+  height: var(--s);
+  background: inherit;
+  border-radius: 50%;
+}
+
+.heart::before{
+  left: calc(var(--s) / -2);
+  top: 0;
+}
+
+.heart::after{
+  left: 0;
+  top: calc(var(--s) / -2);
+}
+
+/* مزيد ضبط للموبايل الصغير */
+@media (max-width: 480px){
+  .grid{
+    grid-template-columns: 1fr;  /* الكلام فوق، القلب تحت */
+    align-items: start;
+  }
+  .heartWrap{
+    margin-top: 12px;
+  }
+}
+
     @keyframes pulse{
       0%,100%{transform: rotate(45deg) scale(1)}
       50%{transform: rotate(45deg) scale(1.08)}
