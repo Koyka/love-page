@@ -14,7 +14,6 @@
     :root{
       --bg1:#0b1020;
       --bg2:#121a33;
-      --card: rgba(15,23,48,.70);
       --text:#fff0f8;
       --muted:#ffc6e6;
 
@@ -40,7 +39,6 @@
       overflow:hidden;
     }
 
-    /* glitter overlay */
     body::before{
       content:"";
       position:fixed;
@@ -53,7 +51,6 @@
       mix-blend-mode: screen;
     }
 
-    /* soft floating blobs */
     .blob{
       position:absolute;
       filter: blur(30px);
@@ -137,9 +134,7 @@
       align-items:center;
       margin-top: 8px;
     }
-    @media (max-width: 720px){
-      .grid{grid-template-columns: 1fr}
-    }
+    @media (max-width: 720px){ .grid{grid-template-columns: 1fr} }
 
     h1{
       margin: 0 0 10px;
@@ -212,7 +207,6 @@
       padding: 10px 8px;
     }
 
-    /* sharp heart point fix */
     .heart{
       width: 120px;
       height: 120px;
@@ -284,7 +278,7 @@
       <div class="shine"></div>
 
       <div class="top">
-        <div class="badge"><span class="dot" aria-hidden="true"></span> 🎀</div>
+        <div class="badge"><span class="dot" aria-hidden="true"></span>🎀</div>
       </div>
 
       <div class="grid">
