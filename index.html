@@ -3,23 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Barbie Night 💖</title>
+  <title>I Love You</title>
   <meta name="description" content="A tiny, sweet one‑page website." />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     :root{
       --bg1:#0b1020;
       --bg2:#121a33;
       --card:#0f1730cc;
       --text:#e9ecff;
-      --muted:#ffc6e6;
-      --accent:#ff3ea5;
-      --accent2:#ff9bd1;
-      --barbie:#ff3ea5;
-      --barbie2:#ffd1ea;
-      --glitter: rgba(255, 62, 165, .35);
+      --muted:#aab2e8;
+      --accent:#ff4d8d;
+      --accent2:#7c5cff;
       --ring: 0 0 0 1px rgba(255,255,255,.08), 0 20px 60px rgba(0,0,0,.55);
       --radius: 24px;
     }
@@ -27,7 +21,7 @@
     html,body{height:100%}
     body{
       margin:0;
-      font-family: "Poppins", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
       color:var(--text);
       background:
         radial-gradient(900px 500px at 15% 20%, rgba(124,92,255,.25), transparent 60%),
@@ -35,17 +29,6 @@
         radial-gradient(800px 500px at 55% 95%, rgba(0,255,204,.10), transparent 60%),
         linear-gradient(180deg, var(--bg1), var(--bg2));
       overflow:hidden;
-        }
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      background:
-        radial-gradient(circle at 12px 12px, rgba(255,255,255,.12) 0 1px, transparent 2px) 0 0/28px 28px,
-        radial-gradient(circle at 8px 18px, var(--glitter) 0 1px, transparent 2px) 0 0/36px 36px;
-      opacity:.35;
-      mix-blend-mode: screen;
     }
 
     /* soft floating blobs */
@@ -86,17 +69,6 @@
       -webkit-backdrop-filter: blur(10px);
       position:relative;
       overflow:hidden;
-        }
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      background:
-        radial-gradient(circle at 12px 12px, rgba(255,255,255,.12) 0 1px, transparent 2px) 0 0/28px 28px,
-        radial-gradient(circle at 8px 18px, var(--glitter) 0 1px, transparent 2px) 0 0/36px 36px;
-      opacity:.35;
-      mix-blend-mode: screen;
     }
 
     .shine{
@@ -140,12 +112,6 @@
       font-size: clamp(34px, 5vw, 64px);
       line-height:1.05;
       letter-spacing:-.02em;
-    }
-
-        .love-title{
-      font-family: "Pacifico", cursive;
-      letter-spacing: .2px;
-      text-shadow: 0 10px 30px rgba(255,62,165,.20);
     }
 
     .gradient-text{
@@ -218,7 +184,7 @@
       border:1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.06);
       color: var(--text);
-      border-radius: 16px;
+      border-radius: 14px;
       padding: 12px 14px;
       font-size: 14px;
       cursor:pointer;
@@ -228,19 +194,9 @@
     button:hover{background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.22)}
     button:active{transform: translateY(1px)}
     .primary{
-      position:relative;
-      overflow:hidden;
       background: linear-gradient(90deg, rgba(255,77,141,.95), rgba(124,92,255,.95));
       border-color: rgba(255,255,255,.22);
       box-shadow: 0 14px 40px rgba(124,92,255,.20);
-    }
-        .primary::before{
-      content:"";
-      position:absolute;
-      inset:-2px;
-      background: radial-gradient(500px 120px at 20% 0%, rgba(255,255,255,.28), transparent 60%);
-      opacity:.55;
-      pointer-events:none;
     }
     .primary:hover{filter: brightness(1.05)}
     .footer{
@@ -260,7 +216,7 @@
       bottom: 18px;
       transform: translateX(-50%);
       padding: 12px 14px;
-      border-radius: 16px;
+      border-radius: 14px;
       background: rgba(15,23,48,.75);
       border: 1px solid rgba(255,255,255,.14);
       box-shadow: var(--ring);
@@ -286,13 +242,12 @@
       <div class="shine"></div>
 
       <div class="top">
-        <div class="badge"><span class="dot" aria-hidden="true"></span> Barbie vibes</div>
-        <div class="badge">Long distance — same love 🌍</div>
+        
       </div>
 
       <div class="grid">
         <div>
-          <h1 class="love-title"><span class="gradient-text">I love you</span> 💖</h1>
+          <h1><span class="gradient-text">I love you</span> 💖</h1>
           <p>
             being far from you is the hardest part. Sometimes it makes it harder to talk the way we want to, and I know misunderstandings happen—but I don’t want you to ever doubt me. I’m staying, I’m trying, and I’m with you through every rough moment.
             
@@ -300,9 +255,7 @@
 
           <div class="actions">
             <button id="sparkBtn">Make it sparkle ✨</button>
-            <button class="primary" id="partyBtn">Let’s go Barbie, let’s go party 🎶</button>
           </div>
-          <audio id="partyAudio" preload="none" src="barbie.mp3"></audio>
         </div>
 
         <div class="heartWrap" aria-hidden="true">
@@ -323,7 +276,6 @@
     const toast = document.getElementById('toast');
     const sparkBtn = document.getElementById('sparkBtn');
     const partyBtn = document.getElementById('partyBtn');
-    const partyAudio = document.getElementById('partyAudio');
     const resetLink = document.getElementById('resetLink');
 
     function showToast(msg){
@@ -337,33 +289,32 @@
 
     function makeSparkle(){
       const s = document.createElement('div');
-      const emojis = ['✨','⭐','💖','💗','🎀'];
-      const emoji = emojis[Math.floor(Math.random()*emojis.length)];
-      const size = 18 + Math.random()*22;
-
-      s.textContent = emoji;
+      const size = 6 + Math.random()*10;
       s.style.position = 'fixed';
       s.style.left = (Math.random()*100) + 'vw';
       s.style.top = (Math.random()*100) + 'vh';
-      s.style.fontSize = size + 'px';
-      s.style.filter = 'drop-shadow(0 0 14px rgba(255,62,165,.55))';
+      s.style.width = size + 'px';
+      s.style.height = size + 'px';
+      s.style.borderRadius = '999px';
+      s.style.background = 'rgba(255,255,255,.9)';
+      s.style.boxShadow = '0 0 18px rgba(255,255,255,.8)';
       s.style.opacity = '0';
-      s.style.transform = 'translateY(10px) scale(.9)';
-      s.style.transition = 'opacity .25s ease, transform .7s ease';
+      s.style.transform = 'translateY(6px)';
+      s.style.transition = 'opacity .25s ease, transform .6s ease';
       s.style.pointerEvents = 'none';
       document.body.appendChild(s);
 
       requestAnimationFrame(()=>{
         s.style.opacity = '1';
-        s.style.transform = 'translateY(-18px) scale(1.05) rotate(8deg)';
+        s.style.transform = 'translateY(-10px)';
       });
 
       setTimeout(()=>{
         s.style.opacity = '0';
-        s.style.transform = 'translateY(-34px) scale(.9) rotate(-10deg)';
-      }, 520);
+        s.style.transform = 'translateY(-22px)';
+      }, 450);
 
-      setTimeout(()=>s.remove(), 1050);
+      setTimeout(()=>s.remove(), 900);
     }
 
     function toggleSparkles(){
@@ -386,27 +337,14 @@
       showToast('Reset ✔');
     }
 
-    function toggleParty(){
-      // Put a file named "barbie.mp3" next to this HTML to play it.
-      // If it’s not there, we open a safe official search link instead.
-      if(!partyAudio) return;
-      if(partyAudio.paused){
-        partyAudio.play().then(()=>{
-          showToast("Party mode 🎶");
-          partyBtn.textContent = "Pause party ⏸️";
-        }).catch(()=>{
-          showToast("Add barbie.mp3 next to the HTML (or I’ll open the song).");
-          window.open("https://www.youtube.com/results?search_query=let%27s%20go%20barbie%20let%27s%20go%20party", "_blank", "noopener");
-        });
-      } else {
-        partyAudio.pause();
-        showToast("Paused");
-        partyBtn.textContent = "Let’s go Barbie, let’s go party 🎶";
-      }
+    
+    function openSpotify(){
+      window.open("https://open.spotify.com/track/5ZrDlcxIDZyjOzHdYW1ydr?si=ba82ec15e10048c3", "_blank", "noopener");
+      showToast("Opening Spotify 🎧");
     }
 
     sparkBtn.addEventListener('click', toggleSparkles);
-    partyBtn.addEventListener('click', toggleParty);
+    partyBtn.addEventListener('click', openSpotify);
     resetLink.addEventListener('click', (e)=>{ e.preventDefault(); reset(); });
   </script>
 </body>
