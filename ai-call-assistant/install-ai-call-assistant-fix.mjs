@@ -4,105 +4,207 @@ import { spawnSync } from 'node:child_process';
 
 const root = process.cwd();
 const appPath = path.join(root, 'public', 'app.js');
+const htmlPath = path.join(root, 'public', 'index.html');
 const workflowPath = path.join(root, 'workflow.json');
-const appBackupPath = `${appPath}.before-ai-fix`;
-const workflowBackupPath = `${workflowPath}.before-ai-fix`;
 
-function replaceExactlyOnce(source, oldText, newText, label) {
-  const count = source.split(oldText).length - 1;
-  if (count === 0 && source.includes(newText)) return source;
-  if (count !== 1) {
-    throw new Error(`${label}: expected one original code block, found ${count}. No files were changed.`);
-  }
-  return source.replace(oldText, newText);
+function ensure(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+function replaceHandler(source, startMarker, nextMarker, replacement, label) {
+  const start = source.indexOf(startMarker);
+  ensure(start !== -1, label + ': handler start was not found.');
+  const end = source.indexOf(nextMarker, start);
+  ensure(end !== -1, label + ': following handler marker was not found.');
+  return source.slice(0, start) + replacement + source.slice(end);
+}
+
+function patchResponseDone(source) {
+  const marker = "  if (event.type === 'response.done') {";
+  const start = source.indexOf(marker);
+  ensure(start !== -1, 'Response diagnostics: response.done handler was not found.');
+  const nextMarker = "  if (event.type === 'error') {";
+  const end = source.indexOf(nextMarker, start);
+  ensure(end !== -1, 'Response diagnostics: following API error handler was not found.');
+  const replacement = [
+    "  if (event.type === 'response.done') {",
+    '    const response = event.response || {};',
+    "    const status = response.status || 'unknown';",
+    '    const reason = response.status_details?.reason || response.status_details?.error?.message;',
+    '    const transcript = (response.output || [])',
+    '      .flatMap((item) => item.content || [])',
+    "      .map((part) => part.transcript || part.text || '')",
+    '      .filter(Boolean)',
+    "      .join(' ');",
+    '    const audioTokens = response.usage?.output_token_details?.audio_tokens;',
+    "    log('AI response ' + status + (reason ? ' (' + reason + ')' : '') + (transcript ? ' · ' + transcript : '') + (Number.isFinite(audioTokens) ? ' · ' + audioTokens + ' audio tokens' : ''));",
+    "    if (status !== 'completed') {",
+    '      clearTimeout(audioSafetyTimer);',
+    "      if (responseMode === 'speech') {",
+    '        setMicEnabled(true);',
+    "        $('markCompleteBtn').disabled = !connected;",
+    '      }',
+    '      responseMode = null;',
+    "      $('draftState').textContent = 'Response ' + status + (reason ? ': ' + reason : '');",
+    '    }',
+    '  }',
+    ''
+  ].join('\n');
+  return source.slice(0, start) + replacement + source.slice(end);
 }
 
 async function main() {
-  let app = await fs.readFile(appPath, 'utf8');
-  const workflowText = await fs.readFile(workflowPath, 'utf8');
-  let workflow;
-  try { workflow = JSON.parse(workflowText); }
-  catch { throw new Error('workflow.json is not valid JSON. No files were changed.'); }
+  const appOriginal = await fs.readFile(appPath, 'utf8');
+  const htmlOriginal = await fs.readFile(htmlPath, 'utf8');
+  const workflowOriginal = await fs.readFile(workflowPath, 'utf8');
+  const workflow = JSON.parse(workflowOriginal);
+  let app = appOriginal;
+  let html = htmlOriginal;
 
-  app = replaceExactlyOnce(
-    app,
-    "      max_output_tokens: 100,\n      input: [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: `Speak exactly this customer-facing sentence and nothing else. Do not add greetings, explanations, or another question: ${text}` }] }],\n      instructions: 'Read the supplied sentence exactly as written in a warm, professional, natural English customer-service voice. Do not alter, extend, or add any words.'",
-    "      max_output_tokens: 'inf',\n      input: [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: `Speak exactly this customer-facing sentence and nothing else. Do not add greetings, explanations, or another question: ${text}` }] }],\n      instructions: 'Speak the supplied sentence exactly as written. Sound like a warm, naturally fluent English-speaking customer-service professional on a real phone call, not a narrator or a synthetic announcement. Use relaxed conversational intonation, gentle pitch variation, natural emphasis on important words, and short pauses at commas and natural phrase boundaries. Keep a human, unhurried rhythm with subtle breath-like transitions between phrases, but do not force audible breaths, filler words, laughter, or sighs. Keep every word; do not stop early, paraphrase, extend, or add any words.'",
-    'Speech length and delivery settings'
-  );
-
-  app = replaceExactlyOnce(
-    app,
-    "  if (event.type === 'response.done') {\n    const status = event.response?.status;\n    if (status && status !== 'completed') {\n      clearTimeout(audioSafetyTimer);\n      if (responseMode === 'speech') { setMicEnabled(true); $('markCompleteBtn').disabled = !connected; }\n      responseMode = null;\n      log(`AI response ended with status: ${status}`);\n    }\n  }",
-    "  if (event.type === 'response.done') {\n    const response = event.response || {};\n    const status = response.status || 'unknown';\n    const reason = response.status_details?.reason || response.status_details?.error?.message;\n    const transcript = (response.output || [])\n      .flatMap((item) => item.content || [])\n      .map((part) => part.transcript || part.text || '')\n      .filter(Boolean)\n      .join(' ');\n    const audioTokens = response.usage?.output_token_details?.audio_tokens;\n    log(`AI response ${status}${reason ? ` (${reason})` : ''}${transcript ? ` · ${transcript}` : ''}${Number.isFinite(audioTokens) ? ` · ${audioTokens} audio tokens` : ''}`);\n    if (status !== 'completed') {\n      clearTimeout(audioSafetyTimer);\n      if (responseMode === 'speech') { setMicEnabled(true); $('markCompleteBtn').disabled = !connected; }\n      responseMode = null;\n      $('draftState').textContent = `Response ${status}${reason ? `: ${reason}` : ''}`;\n    }\n  }",
-    'Audio diagnostics'
-  );
-
-  const legacyRealtimeParser = "    const result = await response.json();";
-  if (app.includes(legacyRealtimeParser)) {
-    app = replaceExactlyOnce(
-      app,
-      "    if (!response.ok) {\n      const text = await response.text();\n      let message = text;\n      try { message = JSON.parse(text).error || text; } catch {}\n      throw new Error(message || 'Could not create session.');\n    }\n    const result = await response.json();\n    await peer.setRemoteDescription({ type: 'answer', sdp: result.transport.sdp });\n    log(`Realtime session created (${result.session?.id || 'connected'}).`);",
-      "    const responseText = await response.text();\n    if (!response.ok) {\n      let message = responseText;\n      try {\n        const payload = JSON.parse(responseText);\n        const detail = payload?.error?.message ?? payload?.error ?? payload?.message;\n        message = typeof detail === 'string' ? detail : JSON.stringify(detail ?? payload);\n      } catch {}\n      throw new Error(`OpenAI API returned ${response.status}: ${message || 'Could not create session.'}`);\n    }\n    const answerSdp = responseText.trim();\n    if (!answerSdp.startsWith('v=')) {\n      throw new Error('OpenAI returned an unexpected WebRTC answer: ' + answerSdp.slice(0, 300));\n    }\n    await peer.setRemoteDescription({ type: 'answer', sdp: answerSdp });\n    log('Realtime session created. Waiting for audio.');",
-      'Realtime answer parsing'
-    );
-  } else if (!app.includes('const answerSdp = responseText.trim();')) {
-    throw new Error('Realtime answer parser is not the original or verified fixed version. No files were changed.');
+  // Accept either the pristine project parser or the user's already-fixed raw SDP parser.
+  if (app.includes('const result = await response.json();') && app.includes('result.transport.sdp')) {
+    const fetchStart = app.indexOf("const response = await fetch('/api/session'");
+    const legacyStart = app.indexOf('    if (!response.ok) {', fetchStart);
+    const legacyEndMarker = "\n  } catch (error) {";
+    const legacyEnd = app.indexOf(legacyEndMarker, legacyStart);
+    ensure(fetchStart !== -1 && legacyStart !== -1 && legacyEnd !== -1,
+      'Legacy Realtime parser did not match; no files changed.');
+    const end = legacyEnd;
+    const replacement = [
+      '    const responseText = await response.text();',
+      '    if (!response.ok) {',
+      '      let message = responseText;',
+      '      try {',
+      '        const payload = JSON.parse(responseText);',
+      '        const detail = payload?.error?.message ?? payload?.error ?? payload?.message;',
+      "        message = typeof detail === 'string' ? detail : JSON.stringify(detail ?? payload);",
+      '      } catch {}',
+      "      throw new Error('OpenAI API returned ' + response.status + ': ' + (message || 'Could not create session.'));",
+      '    }',
+      '    const answerSdp = responseText.trim();',
+      "    if (!answerSdp.startsWith('v=')) {",
+      "      throw new Error('OpenAI returned an unexpected WebRTC answer: ' + answerSdp.slice(0, 300));",
+      '    }',
+      "    await peer.setRemoteDescription({ type: 'answer', sdp: answerSdp });",
+      "    log('Realtime session created. Waiting for audio.');"
+    ].join('\n');
+    app = app.slice(0, legacyStart) + replacement + app.slice(end);
+  } else {
+    ensure(app.includes('const answerSdp = responseText.trim();'),
+      'Realtime parser is neither the original parser nor the known fixed text/SDP parser; no files changed.');
   }
 
-  app = replaceExactlyOnce(
-    app,
-    "$('speakOpeningBtn').addEventListener('click', () => {\n  const step = getCurrentStep();\n  if (step && confirm(`Approve the opening line for Step ${currentStep + 1}?\\n\\n${step.openingLine}`)) {\n    speakText(step.openingLine, 'Opening line approved');\n    addTranscript('AI · APPROVED OPENING', step.openingLine);\n  }\n});",
-    "$('speakOpeningBtn').addEventListener('click', () => {\n  const step = getCurrentStep();\n  if (!step) return;\n  speakText(step.openingLine, 'Opening line spoken');\n  addTranscript('AI · SPOKEN OPENING', step.openingLine);\n});",
-    'Opening-line confirmation removal'
-  );
+  // Change only the spoken-audio output token limit, never the text-drafting limit.
+  const speechStart = app.indexOf('function speakText(');
+  const speechEnd = app.indexOf('\nfunction handleServerEvent', speechStart);
+  ensure(speechStart !== -1 && speechEnd !== -1, 'Could not locate speakText() safely; no files changed.');
+  let speechBlock = app.slice(speechStart, speechEnd);
+  speechBlock = speechBlock.replace(/max_output_tokens:\s*100\s*,/, "max_output_tokens: 'inf',");
+  const oldInstruction = "instructions: 'Read the supplied sentence exactly as written in a warm, professional, natural English customer-service voice. Do not alter, extend, or add any words.'";
+  const naturalInstruction = "instructions: 'Speak the supplied sentence exactly as written. Sound like a warm, naturally fluent English-speaking customer-service professional on a real phone call, not a narrator or synthetic announcement. Use relaxed conversational intonation, gentle pitch variation, natural emphasis on important words, and short pauses at commas and phrase boundaries. Keep a human, unhurried rhythm. Do not force audible breaths, filler words, laughter, or sighs. Keep every word; do not stop early, paraphrase, extend, or add words.'";
+  speechBlock = speechBlock.replace(oldInstruction, naturalInstruction);
+  ensure(speechBlock.includes("max_output_tokens: 'inf'") && speechBlock.includes('naturally fluent English-speaking customer-service professional'),
+    'Speech output settings did not validate; no files changed.');
+  app = app.slice(0, speechStart) + speechBlock + app.slice(speechEnd);
 
-  app = replaceExactlyOnce(
-    app,
-    "$('approveSpeakBtn').addEventListener('click', () => {\n  if (!pendingDraft) return;\n  if (confirm(`Approve and speak this reply to the caller?\\n\\n${pendingDraft}`)) {\n    const approved = pendingDraft;\n    speakText(approved);\n    $('approveSpeakBtn').disabled = true;\n    $('discardDraftBtn').disabled = true;\n    $('draftState').textContent = 'Speaking approved reply';\n  }\n});",
-    "$('approveSpeakBtn').addEventListener('click', () => {\n  if (!pendingDraft) return;\n  const approved = pendingDraft;\n  speakText(approved);\n  $('approveSpeakBtn').disabled = true;\n  $('discardDraftBtn').disabled = true;\n  $('draftState').textContent = 'Speaking approved reply';\n});",
-    'Reply confirmation removal'
-  );
+  // Include the actual text/status of every generated voice response in the event log.
+  app = patchResponseDone(app);
 
-  app = replaceExactlyOnce(
-    app,
-    "$('markCompleteBtn').addEventListener('click', () => {\n  const step = getCurrentStep();\n  if (!step) return;\n  const isLast = currentStep === workflow.steps.length - 1;\n  const prompt = isLast ? 'Confirm that the final step is complete and finish this workflow?' : `Confirm that \"${step.title}\" is complete and move to the next step?`;\n  if (!confirm(prompt)) return;\n  currentStep += 1;",
-    "$('markCompleteBtn').addEventListener('click', () => {\n  const step = getCurrentStep();\n  if (!step) return;\n  currentStep += 1;",
-    'Step-advance confirmation removal'
-  );
+  const openingReplacement = [
+    "$('speakOpeningBtn').addEventListener('click', () => {",
+    '  const step = getCurrentStep();',
+    '  if (!step) return;',
+    "  speakText(step.openingLine, 'Opening line spoken');",
+    "  addTranscript('AI · SPOKEN OPENING', step.openingLine);",
+    '});',
+    ''
+  ].join('\n');
+  app = replaceHandler(app,
+    "$('speakOpeningBtn').addEventListener('click', () => {",
+    "$('suggestBtn').addEventListener('click', () => {",
+    openingReplacement,
+    'Opening-line button');
+
+  const approveReplacement = [
+    "$('approveSpeakBtn').addEventListener('click', () => {",
+    '  if (!pendingDraft) return;',
+    '  const approved = pendingDraft;',
+    '  speakText(approved);',
+    "  $('approveSpeakBtn').disabled = true;",
+    "  $('discardDraftBtn').disabled = true;",
+    "  $('draftState').textContent = 'Speaking approved reply';",
+    '});',
+    ''
+  ].join('\n');
+  app = replaceHandler(app,
+    "$('approveSpeakBtn').addEventListener('click', () => {",
+    "$('discardDraftBtn').addEventListener('click', () => {",
+    approveReplacement,
+    'Approved-reply button');
+
+  const nextStepReplacement = [
+    "$('markCompleteBtn').addEventListener('click', () => {",
+    '  const step = getCurrentStep();',
+    '  if (!step) return;',
+    '  currentStep += 1;',
+    "  pendingDraft = '';",
+    "  currentTranscript = '';",
+    "  $('draftText').textContent = 'Waiting for the customer at the new step.';",
+    "  $('draftState').textContent = 'Waiting for customer';",
+    "  $('approveSpeakBtn').disabled = true;",
+    "  $('discardDraftBtn').disabled = true;",
+    "  $('suggestBtn').disabled = true;",
+    '  renderWorkflow();',
+    "  if (getCurrentStep()) log('Supervisor advanced to Step ' + (currentStep + 1) + '.');",
+    "  else log('Workflow completed by supervisor.');",
+    '});',
+    ''
+  ].join('\n');
+  app = replaceHandler(app,
+    "$('markCompleteBtn').addEventListener('click', () => {",
+    "$('resetStepBtn').addEventListener('click', () => {",
+    nextStepReplacement,
+    'Next-step button');
 
   workflow.voice = 'cedar';
-  const updatedWorkflowText = JSON.stringify(workflow, null, 2) + '\n';
+  const updatedWorkflow = JSON.stringify(workflow, null, 2) + '\n';
+  html = html.replace('Approve & speak opening line', 'Speak opening line');
 
-  const jsCheck = spawnSync(process.execPath, ['--check', appPath], { encoding: 'utf8' });
-  if (jsCheck.status !== 0) throw new Error(`JavaScript validation failed before writing:\n${jsCheck.stderr || jsCheck.stdout}`);
+  const tempApp = appPath + '.tmp-fix.js';
+  const tempHtml = htmlPath + '.tmp-fix';
+  const tempWorkflow = workflowPath + '.tmp-fix';
+  await fs.writeFile(tempApp, app, 'utf8');
+  const checked = spawnSync(process.execPath, ['--check', tempApp], { encoding: 'utf8' });
+  if (checked.status !== 0) {
+    await fs.rm(tempApp, { force: true });
+    throw new Error('JavaScript syntax test failed; originals were not changed:\n' + (checked.stderr || checked.stdout));
+  }
+  await fs.writeFile(tempHtml, html, 'utf8');
+  await fs.writeFile(tempWorkflow, updatedWorkflow, 'utf8');
 
-  const appTemp = `${appPath}.tmp-ai-fix.js`;
-  const workflowTemp = `${workflowPath}.tmp-ai-fix`;
-  await fs.writeFile(appTemp, app, 'utf8');
-  await fs.writeFile(workflowTemp, updatedWorkflowText, 'utf8');
-  const tempCheck = spawnSync(process.execPath, ['--check', appTemp], { encoding: 'utf8' });
-  if (tempCheck.status !== 0) {
-    await fs.rm(appTemp, { force: true });
-    await fs.rm(workflowTemp, { force: true });
-    throw new Error(`JavaScript validation failed; originals were not changed:\n${tempCheck.stderr || tempCheck.stdout}`);
+  // Backups are made before replacing any existing project files.
+  for (const [source, backup] of [
+    [appPath, appPath + '.before-ai-fix'],
+    [htmlPath, htmlPath + '.before-ai-fix'],
+    [workflowPath, workflowPath + '.before-ai-fix']
+  ]) {
+    try { await fs.copyFile(source, backup, fs.constants.COPYFILE_EXCL); }
+    catch (error) { if (error.code !== 'EEXIST') throw error; }
   }
 
-  try { await fs.copyFile(appPath, appBackupPath, fs.constants.COPYFILE_EXCL); } catch (error) { if (error.code !== 'EEXIST') throw error; }
-  try { await fs.copyFile(workflowPath, workflowBackupPath, fs.constants.COPYFILE_EXCL); } catch (error) { if (error.code !== 'EEXIST') throw error; }
-  await fs.rename(appTemp, appPath);
-  await fs.rename(workflowTemp, workflowPath);
+  await fs.rename(tempApp, appPath);
+  await fs.rename(tempHtml, htmlPath);
+  await fs.rename(tempWorkflow, workflowPath);
 
-  console.log('AI Call Assistant fix installed successfully.');
-  console.log('Updated: public/app.js');
-  console.log('Default voice: Cedar');
+  console.log('Fix installed successfully.');
   console.log('Removed extra confirmation popups for speaking and advancing steps.');
-  console.log('Speech output limit: inf; response diagnostics enabled.');
-  console.log('Backups: public/app.js.before-ai-fix and workflow.json.before-ai-fix');
-  console.log('The Reset current step confirmation is intentionally retained as a destructive-action safeguard.');
+  console.log('Kept the confirmation for Reset current step.');
+  console.log('Raised the spoken-output token limit and enabled response diagnostics.');
+  console.log('Set the default voice to Cedar.');
+  console.log('Backup copies were saved beside the original files.');
 }
 
 main().catch((error) => {
-  console.error(`Fix not installed: ${error.message}`);
+  console.error('Fix not installed: ' + error.message);
   process.exitCode = 1;
 });
