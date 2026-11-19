@@ -38,12 +38,17 @@ async function main() {
     'Audio diagnostics'
   );
 
-  app = replaceExactlyOnce(
-    app,
-    "    if (!response.ok) {\n      const text = await response.text();\n      let message = text;\n      try { message = JSON.parse(text).error || text; } catch {}\n      throw new Error(message || 'Could not create session.');\n    }\n    const result = await response.json();\n    await peer.setRemoteDescription({ type: 'answer', sdp: result.transport.sdp });\n    log(`Realtime session created (${result.session?.id || 'connected'}).`);",
-    "    const responseText = await response.text();\n    if (!response.ok) {\n      let message = responseText;\n      try {\n        const payload = JSON.parse(responseText);\n        const detail = payload?.error?.message ?? payload?.error ?? payload?.message;\n        message = typeof detail === 'string' ? detail : JSON.stringify(detail ?? payload);\n      } catch {}\n      throw new Error(`OpenAI API returned ${response.status}: ${message || 'Could not create session.'}`);\n    }\n    const answerSdp = responseText.trim();\n    if (!answerSdp.startsWith('v=')) {\n      throw new Error('OpenAI returned an unexpected WebRTC answer: ' + answerSdp.slice(0, 300));\n    }\n    await peer.setRemoteDescription({ type: 'answer', sdp: answerSdp });\n    log('Realtime session created. Waiting for audio.');",
-    'Realtime answer parsing'
-  );
+  const legacyRealtimeParser = "    const result = await response.json();";
+  if (app.includes(legacyRealtimeParser)) {
+    app = replaceExactlyOnce(
+      app,
+      "    if (!response.ok) {\n      const text = await response.text();\n      let message = text;\n      try { message = JSON.parse(text).error || text; } catch {}\n      throw new Error(message || 'Could not create session.');\n    }\n    const result = await response.json();\n    await peer.setRemoteDescription({ type: 'answer', sdp: result.transport.sdp });\n    log(`Realtime session created (${result.session?.id || 'connected'}).`);",
+      "    const responseText = await response.text();\n    if (!response.ok) {\n      let message = responseText;\n      try {\n        const payload = JSON.parse(responseText);\n        const detail = payload?.error?.message ?? payload?.error ?? payload?.message;\n        message = typeof detail === 'string' ? detail : JSON.stringify(detail ?? payload);\n      } catch {}\n      throw new Error(`OpenAI API returned ${response.status}: ${message || 'Could not create session.'}`);\n    }\n    const answerSdp = responseText.trim();\n    if (!answerSdp.startsWith('v=')) {\n      throw new Error('OpenAI returned an unexpected WebRTC answer: ' + answerSdp.slice(0, 300));\n    }\n    await peer.setRemoteDescription({ type: 'answer', sdp: answerSdp });\n    log('Realtime session created. Waiting for audio.');",
+      'Realtime answer parsing'
+    );
+  } else if (!app.includes('const answerSdp = responseText.trim();')) {
+    throw new Error('Realtime answer parser is not the original or verified fixed version. No files were changed.');
+  }
 
   app = replaceExactlyOnce(
     app,
